@@ -60,6 +60,7 @@ store: Dict[str, Any] = {
     "sim_mode": "manual",        # default simulation mode (fallback when Betfair data absent)
     "provider_name": "",
     "betfair_available": False,  # True when live Betfair quotes were found
+    "use_simulated": False,      # True = ignore live Betfair data, use simulation only
     # Exposure params (defaults)
     "max_stake": 500.0,
     "expected_sharp_bets": 10,
@@ -146,8 +147,12 @@ def run_poll() -> None:
         our_odds: Dict[str, Dict[str, float]] = {}
         for event in events:
             eid = event["id"]
-            # Betfair prices take priority; simulation fills any gaps
-            our_odds[eid] = {**sim_odds.get(eid, {}), **betfair_odds.get(eid, {})}
+            if store.get("use_simulated"):
+                # Simulated mode: ignore live Betfair data entirely
+                our_odds[eid] = dict(sim_odds.get(eid, {}))
+            else:
+                # Live mode: Betfair prices take priority; simulation fills any gaps
+                our_odds[eid] = {**sim_odds.get(eid, {}), **betfair_odds.get(eid, {})}
 
         outliers = compute_outliers(
             events=events,
@@ -275,11 +280,15 @@ async def outliers_page(
     league: str = Query("", description="Filter by league"),
     hours: int = Query(24, description="Next N hours"),
     sim_mode: str = Query("", description="Simulation mode"),
+    use_simulated: int = Query(-1, description="0=live Betfair, 1=simulated"),
     max_stake: float = Query(0.0),
     expected_sharp_bets: int = Query(0),
     assumed_hit_rate: float = Query(0.0),
 ):
     # Apply param overrides
+    if use_simulated != -1 and bool(use_simulated) != store["use_simulated"]:
+        store["use_simulated"] = bool(use_simulated)
+        run_poll()
     if sim_mode and sim_mode in MODES:
         store["sim_mode"] = sim_mode
         run_poll()
@@ -321,6 +330,7 @@ async def outliers_page(
             "provider_name": store["provider_name"],
             "events_scanned": store["events_scanned"],
             "betfair_available": store["betfair_available"],
+            "use_simulated": store["use_simulated"],
         },
     )
 
