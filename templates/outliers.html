@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Market Divergence & Exposure Monitor</title>
+  <title>Betfair Market Intelligence</title>
   <link rel="stylesheet" href="/static/styles.css"/>
 </head>
 <body>
 <header>
   <div class="header-inner">
-    <span class="brand">Market Divergence &amp; Exposure Monitor</span>
+    <span class="brand">Betfair Market Intelligence</span>
     <nav>
       <a href="/outliers">Dashboard</a>
       <a href="/health">Health</a>
@@ -65,8 +65,8 @@
 
     <div class="controls-row controls-row--sep">
       <div class="control-group">
-        <label><span data-tooltip="Controls how our odds are generated for simulation. Manual keeps static odds; other modes introduce dynamic divergence patterns.">Simulation mode</span></label>
-        <select name="sim_mode">
+        <label><span data-tooltip="Controls how Betfair prices are simulated when live Betfair quotes are unavailable. Not used when Betfair data is present.">Simulation mode {% if betfair_available %}<span class="meta-text">(inactive — live Betfair data)</span>{% endif %}</span></label>
+        <select name="sim_mode" {% if betfair_available %}disabled title="Betfair live prices are active"{% endif %}>
           {% for key, label in sim_modes.items() %}
           <option value="{{ key }}" {% if sim_mode == key %}selected{% endif %}>{{ label }}</option>
           {% endfor %}
@@ -92,7 +92,7 @@
 
   <!-- Export link -->
   <div class="toolbar">
-    <span class="result-count">{{ rows|length }} result(s)</span>
+    <span class="result-count">{{ rows|length }} result(s){% if betfair_available %} &nbsp;·&nbsp; <span class="betfair-live-badge">● Betfair live</span>{% endif %}</span>
     <a class="btn-export" href="/export.csv?severity={{ severity_filter }}&sport={{ sport_filter }}&league={{ league_filter }}&hours={{ hours_filter }}">
       ↓ Export CSV
     </a>
@@ -107,14 +107,14 @@
           <th><span data-tooltip="Scheduled start time of the event in UTC.">Start (UTC)</span></th>
           <th><span data-tooltip="League and event name. Click 'detail' to drill into bookmaker odds.">Event</span></th>
           <th><span data-tooltip="Betting selection: Home win, Draw, or Away win.">Sel</span></th>
-          <th><span data-tooltip="Median decimal odds across all bookmakers for this selection.">Median odds</span></th>
-          <th><span data-tooltip="Our quoted decimal odds for this selection.">Our odds</span></th>
-          <th><span data-tooltip="Percentage edge our odds give compared to the market median. Positive means we are longer than the market.">Edge %</span></th>
-          <th><span data-tooltip="Standard deviations our odds sit from the bookmaker mean. Higher absolute values indicate a stronger divergence.">Z</span></th>
-          <th><span data-tooltip="Alert severity: Green = minor divergence, Amber = notable divergence, Red = significant divergence requiring review.">Severity</span></th>
-          <th><span data-tooltip="Estimated maximum financial exposure based on max stake, expected sharp bets, and hit rate parameters.">Exposure €</span></th>
-          <th><span data-tooltip="Width of the bookmaker spread (max − min odds) and its category (tight / normal / wide).">Spread</span></th>
-          <th><span data-tooltip="Where our odds rank among all bookmakers (1 = shortest odds). Lower rank means we are offering longer odds than most.">Rank</span></th>
+          <th><span data-tooltip="Median decimal odds across the competitor market (excluding Betfair) for this selection.">Market Median</span></th>
+          <th><span data-tooltip="Betfair's current decimal odds for this selection.">Betfair</span></th>
+          <th><span data-tooltip="Percentage by which Betfair's odds exceed the competitor market median. Positive = Betfair is offering more value than the market.">Edge %</span></th>
+          <th><span data-tooltip="Standard deviations Betfair's odds sit from the competitor bookmaker mean. High absolute values signal a strong divergence from the market.">Z</span></th>
+          <th><span data-tooltip="Alert severity: Green = minor divergence, Amber = notable divergence, Red = significant divergence warranting trader review.">Severity</span></th>
+          <th><span data-tooltip="Estimated maximum liability based on max stake, expected sharp bets, and hit rate parameters.">Exposure €</span></th>
+          <th><span data-tooltip="Width of the competitor bookmaker spread (max − min odds) and its category (tight / normal / wide).">Spread</span></th>
+          <th><span data-tooltip="Where Betfair's odds rank among all competitor bookmakers (1 = longest odds / best value). Lower rank means Betfair is offering more generous prices.">Rank</span></th>
           <th></th>
         </tr>
       </thead>
