@@ -207,6 +207,8 @@ tbody tr:hover { background: #fafafa; }
 /* ---- Misc ---- */
 .mono { font-family: var(--font-mono); }
 .small { font-size: 11px; }
+.meta-text { color: var(--color-text-muted); font-size: 12px; }
+.spread-info { font-size: 13px; margin: 6px 0 10px; color: var(--color-text); }
 .link-detail { font-size: 12px; color: var(--color-brand); text-decoration: none; white-space: nowrap; }
 .link-detail:hover { text-decoration: underline; }
 

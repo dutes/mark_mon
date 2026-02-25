@@ -49,6 +49,28 @@ def _compute_exposure(
     return cost_per_bet * expected_sharp_bets * assumed_hit_rate
 
 
+def _spread_category(spread_width: float) -> str:
+    if spread_width < 0.05:
+        return "tight"
+    if spread_width <= 0.15:
+        return "normal"
+    return "wide"
+
+
+def _confidence_label(n_books: int) -> str:
+    if n_books < 4:
+        return "Low"
+    if n_books <= 6:
+        return "Medium"
+    return "High"
+
+
+def _our_rank(our_odds: float, odds_list: List[float]) -> int:
+    """Rank of our_odds in combined list (bookmakers + ours), sorted descending (1 = best)."""
+    combined = sorted(odds_list + [our_odds], reverse=True)
+    return combined.index(our_odds) + 1
+
+
 def compute_outliers(
     events: List[Dict[str, Any]],
     quotes_by_event: Dict[str, List[Dict[str, Any]]],
@@ -97,6 +119,9 @@ def compute_outliers(
                 our_odds, median_odds, max_stake, expected_sharp_bets, assumed_hit_rate
             )
 
+            spread_width = round(max(odds_list) - min(odds_list), 3)
+            confidence_score = len(odds_list)
+
             results.append(
                 {
                     "event_id": event_id,
@@ -114,6 +139,12 @@ def compute_outliers(
                     "severity": severity,
                     "exposure": round(exposure, 2),
                     "bookmaker_count": len(odds_list),
+                    "spread_width": spread_width,
+                    "spread_category": _spread_category(spread_width),
+                    "our_rank": _our_rank(our_odds, odds_list),
+                    "total_books": len(odds_list),
+                    "confidence_score": confidence_score,
+                    "confidence_label": _confidence_label(confidence_score),
                 }
             )
 
@@ -155,6 +186,8 @@ def compute_event_detail(
             our_odds, median_odds, max_stake, expected_sharp_bets, assumed_hit_rate
         )
 
+        spread_width = round(max(odds_list) - min(odds_list), 3)
+        confidence_score = len(odds_list)
         bookmakers = sorted(sel_quotes, key=lambda q: float(q["decimal_odds"]))
         selections_detail.append(
             {
@@ -165,6 +198,12 @@ def compute_event_detail(
                 "severity": severity,
                 "exposure": round(exposure, 2),
                 "bookmakers": bookmakers,
+                "spread_width": spread_width,
+                "spread_category": _spread_category(spread_width),
+                "our_rank": _our_rank(our_odds, odds_list),
+                "total_books": len(odds_list),
+                "confidence_score": confidence_score,
+                "confidence_label": _confidence_label(confidence_score),
             }
         )
 

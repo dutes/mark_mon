@@ -51,6 +51,15 @@
       </div>
     </div>
 
+    <!-- Spread & Confidence -->
+    <p class="spread-info">
+      Spread: <span class="mono">{{ "%.3f"|format(sel_detail.spread_width) }}</span>
+      <span class="meta-text">({{ sel_detail.spread_category }})</span>
+      &nbsp;|&nbsp; Confidence: {{ sel_detail.confidence_label }}
+      <span class="meta-text">({{ sel_detail.confidence_score }} books)</span>
+      &nbsp;|&nbsp; Rank: {{ sel_detail.our_rank }} / {{ sel_detail.total_books + 1 }}
+    </p>
+
     <!-- Bookmaker breakdown -->
     <details class="bk-details">
       <summary>Bookmaker odds ({{ sel_detail.bookmakers|length }})</summary>
