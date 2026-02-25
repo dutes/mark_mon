@@ -28,8 +28,41 @@ docker-compose up --build
 
 ### Using the live odds API (optional)
 
+Copy `.env.example` to `.env` and edit the values:
+
+```bash
+cp .env.example .env
+```
+
+Then open `.env` and set:
+
+```
+ODDS_PROVIDER=oddsapi
+ODDSAPI_KEY=your_key_here
+```
+
+Finally run:
+
+```bash
+docker-compose up --build
+```
+
+**Linux / macOS** — you can also pass variables inline:
+
 ```bash
 ODDS_PROVIDER=oddsapi ODDSAPI_KEY=your_key_here docker-compose up --build
+```
+
+**Windows PowerShell** — use the `.env` file approach above, or set variables before the command:
+
+```powershell
+$env:ODDS_PROVIDER="oddsapi"; $env:ODDSAPI_KEY="your_key_here"; docker-compose up --build
+```
+
+**Windows CMD**:
+
+```cmd
+set ODDS_PROVIDER=oddsapi && set ODDSAPI_KEY=your_key_here && docker-compose up --build
 ```
 
 Without `ODDSAPI_KEY`, the app automatically uses the built-in mock provider.
