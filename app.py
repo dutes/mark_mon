@@ -208,10 +208,11 @@ async def health():
 @app.get("/api/outliers")
 async def api_outliers(
     severity: str = Query("amber", description="all|green|amber|red"),
+    sport: str = Query("", description="Filter by sport"),
     league: str = Query("", description="Filter by league name"),
     hours: int = Query(24, description="Next N hours"),
 ):
-    rows = _filter_outliers(severity, league, hours)
+    rows = _filter_outliers(severity, sport, league, hours)
     return rows
 
 
@@ -219,6 +220,7 @@ async def api_outliers(
 async def outliers_page(
     request: Request,
     severity: str = Query("amber", description="all|green|amber|red"),
+    sport: str = Query("", description="Filter by sport"),
     league: str = Query("", description="Filter by league"),
     hours: int = Query(24, description="Next N hours"),
     sim_mode: str = Query("", description="Simulation mode"),
@@ -240,8 +242,13 @@ async def outliers_page(
         store["assumed_hit_rate"] = assumed_hit_rate
         run_poll()
 
-    rows = _filter_outliers(severity, league, hours)
-    leagues = sorted({e.get("league", "") for e in store["events"]})
+    rows = _filter_outliers(severity, sport, league, hours)
+    sports = sorted({e.get("sport", "") for e in store["events"] if e.get("sport")})
+    # Leagues filtered by selected sport (or all if no sport selected)
+    leagues = sorted({
+        e.get("league", "") for e in store["events"]
+        if not sport or e.get("sport", "") == sport
+    })
 
     return templates.TemplateResponse(
         "outliers.html",
@@ -249,8 +256,10 @@ async def outliers_page(
             "request": request,
             "rows": rows,
             "severity_filter": severity,
+            "sport_filter": sport,
             "league_filter": league,
             "hours_filter": hours,
+            "sports": sports,
             "leagues": leagues,
             "sim_mode": store["sim_mode"],
             "sim_modes": MODES,
@@ -276,9 +285,10 @@ async def event_detail(
     quotes = store["quotes_by_event"].get(event_id, [])
     our_odds_map = store["our_odds"].get(event_id, {})
 
-    # Collect history for this event
+    # Collect history for this event — use all known selection keys
+    sel_keys = list({q["selection_key"] for q in quotes}) or list(our_odds_map.keys())
     history_by_sel: Dict[str, List] = {}
-    for sel in ("home", "draw", "away"):
+    for sel in sel_keys:
         key = (event_id, sel)
         history_by_sel[sel] = list(store["history"].get(key, []))
 
@@ -306,10 +316,11 @@ async def event_detail(
 @app.get("/export.csv")
 async def export_csv(
     severity: str = Query("amber"),
+    sport: str = Query(""),
     league: str = Query(""),
     hours: int = Query(24),
 ):
-    rows = _filter_outliers(severity, league, hours)
+    rows = _filter_outliers(severity, sport, league, hours)
     output = io.StringIO()
     fieldnames = [
         "start_time_utc", "league", "event_name", "selection_key",
@@ -329,7 +340,7 @@ async def export_csv(
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
-def _filter_outliers(severity: str, league: str, hours: int) -> List[Dict[str, Any]]:
+def _filter_outliers(severity: str, sport: str, league: str, hours: int) -> List[Dict[str, Any]]:
     rows = store["outliers"]
     now = datetime.now(timezone.utc)
     cutoff = now + timedelta(hours=hours)
@@ -343,6 +354,10 @@ def _filter_outliers(severity: str, league: str, hours: int) -> List[Dict[str, A
                     continue
             elif row["severity"] != severity:
                 continue
+
+        # Sport filter
+        if sport and row.get("sport", "").lower() != sport.lower():
+            continue
 
         # League filter
         if league and row.get("league", "").lower() != league.lower():

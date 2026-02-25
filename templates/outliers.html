@@ -23,6 +23,15 @@
   <form method="get" action="/outliers" class="controls-panel">
     <div class="controls-row">
       <div class="control-group">
+        <label>Sport</label>
+        <select name="sport" id="sport-select" onchange="this.form.submit()">
+          <option value="">All sports</option>
+          {% for sp in sports %}
+          <option value="{{ sp }}" {% if sport_filter == sp %}selected{% endif %}>{{ sp | replace("_", " ") | title }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="control-group">
         <label>Severity</label>
         <select name="severity">
           <option value="amber" {% if severity_filter == "amber" %}selected{% endif %}>Amber + Red</option>
@@ -31,7 +40,7 @@
         </select>
       </div>
       <div class="control-group">
-        <label>League</label>
+        <label>League / Meeting</label>
         <select name="league">
           <option value="">All leagues</option>
           {% for lg in leagues %}
@@ -42,6 +51,7 @@
       <div class="control-group">
         <label>Time window</label>
         <select name="hours">
+          <option value="1"   {% if hours_filter == 1   %}selected{% endif %}>1 hour</option>
           <option value="6"   {% if hours_filter == 6   %}selected{% endif %}>6 hours</option>
           <option value="12"  {% if hours_filter == 12  %}selected{% endif %}>12 hours</option>
           <option value="24"  {% if hours_filter == 24  %}selected{% endif %}>1 day</option>
@@ -83,7 +93,7 @@
   <!-- Export link -->
   <div class="toolbar">
     <span class="result-count">{{ rows|length }} result(s)</span>
-    <a class="btn-export" href="/export.csv?severity={{ severity_filter }}&league={{ league_filter }}&hours={{ hours_filter }}">
+    <a class="btn-export" href="/export.csv?severity={{ severity_filter }}&sport={{ sport_filter }}&league={{ league_filter }}&hours={{ hours_filter }}">
       ↓ Export CSV
     </a>
   </div>
