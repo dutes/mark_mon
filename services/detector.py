@@ -105,7 +105,7 @@ def compute_outliers(
                     "start_time_utc": event.get("start_time_utc", ""),
                     "home_team": event.get("home_team", ""),
                     "away_team": event.get("away_team", ""),
-                    "event_name": f"{event.get('home_team','')} vs {event.get('away_team','')}",
+                    "event_name": f"{event.get('home_team','')} vs {event.get('away_team','')}" if event.get('away_team') else event.get('home_team', ''),
                     "selection_key": sel,
                     "market_median_odds": round(median_odds, 3),
                     "our_odds": round(our_odds, 3),
@@ -140,7 +140,7 @@ def compute_event_detail(
             by_selection.setdefault(sel, []).append(q)
 
     selections_detail = []
-    for sel in ("home", "draw", "away"):
+    for sel in by_selection:
         sel_quotes = by_selection.get(sel, [])
         if not sel_quotes:
             continue
@@ -170,7 +170,7 @@ def compute_event_detail(
 
     return {
         "event": event,
-        "event_name": f"{event.get('home_team','')} vs {event.get('away_team','')}",
+        "event_name": f"{event.get('home_team','')} vs {event.get('away_team','')}" if event.get('away_team') else event.get('home_team', ''),
         "selections": selections_detail,
         "history": history,
     }
