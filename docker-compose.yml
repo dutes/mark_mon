@@ -1,0 +1,12 @@
+version: "3.9"
+
+services:
+  mark_mon:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      ODDS_PROVIDER: ${ODDS_PROVIDER:-mock}
+      ODDSAPI_KEY: ${ODDSAPI_KEY:-}
+      POLL_INTERVAL_SECONDS: ${POLL_INTERVAL_SECONDS:-60}
+    restart: unless-stopped

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{{ event_name }} — Market Monitor</title>
+  <link rel="stylesheet" href="/static/styles.css"/>
+</head>
+<body>
+<header>
+  <div class="header-inner">
+    <span class="brand">Market Divergence &amp; Exposure Monitor</span>
+    <nav>
+      <a href="/outliers">← Back to Dashboard</a>
+      <a href="/health">Health</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="event-header">
+    <div class="event-header__league">{{ event.league }}</div>
+    <h1 class="event-header__title">{{ event_name }}</h1>
+    <div class="event-header__meta">
+      <span>Start: <strong>{{ event.start_time_utc[:16].replace("T"," ") }} UTC</strong></span>
+      <span>Sport: <strong>{{ event.sport }}</strong></span>
+    </div>
+  </div>
+
+  <!-- Per-selection breakdown -->
+  {% for sel_detail in selections %}
+  <section class="sel-section sel-section--{{ sel_detail.severity }}">
+    <div class="sel-section__header">
+      <span class="sel-badge sel-{{ sel_detail.selection_key }}">{{ sel_detail.selection_key }}</span>
+      <span class="badge badge--{{ sel_detail.severity }}">{{ sel_detail.severity }}</span>
+      <span class="sel-section__edge">Edge: <strong class="{{ severity_class(sel_detail.severity) }}">
+        {% if sel_detail.edge_pct >= 0 %}+{% endif %}{{ "%.2f"|format(sel_detail.edge_pct) }}%
+      </strong></span>
+      <span class="sel-section__exposure">Exposure: <strong>€ {{ "%.2f"|format(sel_detail.exposure) }}</strong></span>
+    </div>
+
+    <div class="sel-section__odds-row">
+      <div class="odds-card">
+        <div class="odds-card__label">Market Median</div>
+        <div class="odds-card__value mono">{{ "%.3f"|format(sel_detail.market_median_odds) }}</div>
+      </div>
+      <div class="odds-card odds-card--ours">
+        <div class="odds-card__label">Our Odds</div>
+        <div class="odds-card__value mono">{{ "%.3f"|format(sel_detail.our_odds) }}</div>
+      </div>
+    </div>
+
+    <!-- Bookmaker breakdown -->
+    <details class="bk-details">
+      <summary>Bookmaker odds ({{ sel_detail.bookmakers|length }})</summary>
+      <table class="bk-table">
+        <thead>
+          <tr><th>Bookmaker</th><th>Decimal odds</th><th>Implied prob</th><th>Timestamp</th></tr>
+        </thead>
+        <tbody>
+          {% for q in sel_detail.bookmakers %}
+          <tr>
+            <td>{{ q.bookmaker }}</td>
+            <td class="mono">{{ "%.3f"|format(q.decimal_odds|float) }}</td>
+            <td class="mono">{{ "%.2f"|format(100.0 / q.decimal_odds|float) }}%</td>
+            <td class="mono small">{{ q.timestamp_utc[:19].replace("T"," ") }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </details>
+
+    <!-- History -->
+    {% set sel_history = history[sel_detail.selection_key] if sel_detail.selection_key in history else [] %}
+    {% if sel_history %}
+    <details class="bk-details">
+      <summary>Price history ({{ sel_history|length }} snapshots)</summary>
+      <table class="bk-table">
+        <thead>
+          <tr><th>Cycle</th><th>Timestamp</th><th>Median odds</th><th>Our odds</th><th>Edge %</th><th>Severity</th></tr>
+        </thead>
+        <tbody>
+          {% for snap in sel_history|reverse %}
+          <tr>
+            <td class="mono">{{ snap.cycle }}</td>
+            <td class="mono small">{{ snap.timestamp_utc[:19].replace("T"," ") }}</td>
+            <td class="mono">{{ "%.3f"|format(snap.market_median_odds) }}</td>
+            <td class="mono">{{ "%.3f"|format(snap.our_odds) }}</td>
+            <td class="mono {{ severity_class(snap.severity) }}">
+              {% if snap.edge_pct >= 0 %}+{% endif %}{{ "%.2f"|format(snap.edge_pct) }}%
+            </td>
+            <td><span class="badge badge--{{ snap.severity }}">{{ snap.severity }}</span></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </details>
+    {% endif %}
+  </section>
+  {% endfor %}
+
+  {% if not selections %}
+  <div class="empty-state">
+    <p>No odds data available for this event.</p>
+  </div>
+  {% endif %}
+</main>
+
+<footer>
+  <span>Provider: <strong>{{ provider_name }}</strong></span>
+  <span>Last updated: <strong>{{ last_poll_utc[:19].replace("T"," ") if last_poll_utc else "—" }} UTC</strong></span>
+</footer>
+</body>
+</html>
