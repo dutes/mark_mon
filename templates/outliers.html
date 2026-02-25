@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Market Divergence & Exposure Monitor</title>
+  <link rel="stylesheet" href="/static/styles.css"/>
+</head>
+<body>
+<header>
+  <div class="header-inner">
+    <span class="brand">Market Divergence &amp; Exposure Monitor</span>
+    <nav>
+      <a href="/outliers">Dashboard</a>
+      <a href="/health">Health</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <!-- Controls Panel -->
+  <form method="get" action="/outliers" class="controls-panel">
+    <div class="controls-row">
+      <div class="control-group">
+        <label>Severity</label>
+        <select name="severity">
+          <option value="amber" {% if severity_filter == "amber" %}selected{% endif %}>Amber + Red</option>
+          <option value="red"   {% if severity_filter == "red"   %}selected{% endif %}>Red only</option>
+          <option value="all"   {% if severity_filter == "all"   %}selected{% endif %}>All</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label>League</label>
+        <select name="league">
+          <option value="">All leagues</option>
+          {% for lg in leagues %}
+          <option value="{{ lg }}" {% if league_filter == lg %}selected{% endif %}>{{ lg }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="control-group">
+        <label>Time window (h)</label>
+        <input type="number" name="hours" value="{{ hours_filter }}" min="1" max="168" style="width:70px"/>
+      </div>
+    </div>
+
+    <div class="controls-row controls-row--sep">
+      <div class="control-group">
+        <label>Simulation mode</label>
+        <select name="sim_mode">
+          {% for key, label in sim_modes.items() %}
+          <option value="{{ key }}" {% if sim_mode == key %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="control-group">
+        <label>Max stake (€)</label>
+        <input type="number" name="max_stake" value="{{ max_stake|int }}" min="1" max="10000" style="width:80px"/>
+      </div>
+      <div class="control-group">
+        <label>Sharp bets expected</label>
+        <input type="number" name="expected_sharp_bets" value="{{ expected_sharp_bets }}" min="1" max="1000" style="width:70px"/>
+      </div>
+      <div class="control-group">
+        <label>Hit rate</label>
+        <input type="number" name="assumed_hit_rate" value="{{ assumed_hit_rate }}" min="0.01" max="1.0" step="0.01" style="width:70px"/>
+      </div>
+      <div class="control-group control-group--action">
+        <button type="submit" class="btn-primary">Apply</button>
+      </div>
+    </div>
+  </form>
+
+  <!-- Export link -->
+  <div class="toolbar">
+    <span class="result-count">{{ rows|length }} result(s)</span>
+    <a class="btn-export" href="/export.csv?severity={{ severity_filter }}&league={{ league_filter }}&hours={{ hours_filter }}">
+      ↓ Export CSV
+    </a>
+  </div>
+
+  <!-- Outliers table -->
+  {% if rows %}
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Start (UTC)</th>
+          <th>Event</th>
+          <th>Sel</th>
+          <th>Median odds</th>
+          <th>Our odds</th>
+          <th>Edge %</th>
+          <th>Severity</th>
+          <th>Exposure €</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+        <tr class="row-{{ row.severity }}">
+          <td class="mono">{{ row.start_time_utc[:16].replace("T"," ") }}</td>
+          <td>
+            <span class="league-badge">{{ row.league }}</span><br/>
+            <strong>{{ row.event_name }}</strong>
+          </td>
+          <td><span class="sel-badge sel-{{ row.selection_key }}">{{ row.selection_key }}</span></td>
+          <td class="mono">{{ "%.3f"|format(row.market_median_odds) }}</td>
+          <td class="mono">{{ "%.3f"|format(row.our_odds) }}</td>
+          <td class="mono {{ severity_class(row.severity) }}">
+            {% if row.edge_pct >= 0 %}+{% endif %}{{ "%.2f"|format(row.edge_pct) }}%
+          </td>
+          <td><span class="badge badge--{{ row.severity }}">{{ row.severity }}</span></td>
+          <td class="mono">€ {{ "%.2f"|format(row.exposure) }}</td>
+          <td><a href="/event/{{ row.event_id }}" class="link-detail">detail →</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <p>No outliers match the current filters.</p>
+    <p>Try selecting <strong>All</strong> severity or a wider time window, or switch simulation mode.</p>
+  </div>
+  {% endif %}
+</main>
+
+<footer>
+  <span>Provider: <strong>{{ provider_name }}</strong></span>
+  <span>Mode: <strong>{{ sim_modes[sim_mode] }}</strong></span>
+  <span>Events scanned: <strong>{{ events_scanned }}</strong></span>
+  <span>Last updated: <strong>{{ last_poll_utc[:19].replace("T"," ") if last_poll_utc else "—" }} UTC</strong></span>
+</footer>
+</body>
+</html>
