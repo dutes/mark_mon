@@ -110,6 +110,7 @@
           <th>Median odds</th>
           <th>Our odds</th>
           <th>Edge %</th>
+          <th title="Standard deviations from market mean (bookmakers only).">Z</th>
           <th>Severity</th>
           <th>Exposure €</th>
           <th>Spread</th>
@@ -131,6 +132,7 @@
           <td class="mono {{ severity_class(row.severity) }}">
             {% if row.edge_pct >= 0 %}+{% endif %}{{ "%.2f"|format(row.edge_pct) }}%
           </td>
+          <td class="mono">{{ row.z_label }}</td>
           <td><span class="badge badge--{{ row.severity }}">{{ row.severity }}</span></td>
           <td class="mono">€ {{ "%.2f"|format(row.exposure) }}</td>
           <td class="mono">{{ "%.3f"|format(row.spread_width) }} <span class="meta-text">({{ row.spread_category }})</span></td>
