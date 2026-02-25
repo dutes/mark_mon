@@ -4,6 +4,7 @@ detector.py — consensus computation, divergence detection, and exposure estima
 
 from __future__ import annotations
 
+import math
 import statistics
 from typing import List, Dict, Any, Optional
 
@@ -71,6 +72,31 @@ def _our_rank(our_odds: float, odds_list: List[float]) -> int:
     return combined.index(our_odds) + 1
 
 
+def _compute_z_score(
+    our_odds: float, odds_list: List[float]
+) -> tuple:
+    """
+    Compute z_score of our_odds relative to bookmaker distribution.
+    Returns (mean, std, z_score, z_label, abs_z).
+    - n < 3: z_score=None, z_label="N/A"
+    - std == 0: z_score=0.0, z_label="0.00σ"
+    """
+    n = len(odds_list)
+    if n < 3:
+        return (None, None, None, "N/A", None)
+    mean = sum(odds_list) / n
+    variance = sum((x - mean) ** 2 for x in odds_list) / n
+    std = math.sqrt(variance)
+    if std == 0.0:
+        z = 0.0
+        z_label = "0.00σ"
+    else:
+        z = (our_odds - mean) / std
+        z_label = f"{z:.2f}σ"
+    abs_z = abs(z)
+    return (round(mean, 3), round(std, 3), round(z, 4), z_label, round(abs_z, 4))
+
+
 def compute_outliers(
     events: List[Dict[str, Any]],
     quotes_by_event: Dict[str, List[Dict[str, Any]]],
@@ -121,6 +147,7 @@ def compute_outliers(
 
             spread_width = round(max(odds_list) - min(odds_list), 3)
             confidence_score = len(odds_list)
+            mean_odds, std_odds, z_score, z_label, abs_z = _compute_z_score(our_odds, odds_list)
 
             results.append(
                 {
@@ -133,6 +160,8 @@ def compute_outliers(
                     "event_name": f"{event.get('home_team','')} vs {event.get('away_team','')}" if event.get('away_team') else event.get('home_team', ''),
                     "selection_key": sel,
                     "market_median_odds": round(median_odds, 3),
+                    "market_mean_odds": mean_odds,
+                    "market_std_odds": std_odds,
                     "our_odds": round(our_odds, 3),
                     "edge": round(edge, 5),
                     "edge_pct": round(edge * 100, 2),
@@ -145,6 +174,9 @@ def compute_outliers(
                     "total_books": len(odds_list),
                     "confidence_score": confidence_score,
                     "confidence_label": _confidence_label(confidence_score),
+                    "z_score": z_score,
+                    "z_label": z_label,
+                    "abs_z": abs_z,
                 }
             )
 
@@ -189,10 +221,13 @@ def compute_event_detail(
         spread_width = round(max(odds_list) - min(odds_list), 3)
         confidence_score = len(odds_list)
         bookmakers = sorted(sel_quotes, key=lambda q: float(q["decimal_odds"]))
+        mean_odds, std_odds, z_score, z_label, abs_z = _compute_z_score(our_odds, odds_list)
         selections_detail.append(
             {
                 "selection_key": sel,
                 "market_median_odds": round(median_odds, 3),
+                "market_mean_odds": mean_odds,
+                "market_std_odds": std_odds,
                 "our_odds": round(our_odds, 3),
                 "edge_pct": round(edge * 100, 2),
                 "severity": severity,
@@ -204,6 +239,9 @@ def compute_event_detail(
                 "total_books": len(odds_list),
                 "confidence_score": confidence_score,
                 "confidence_label": _confidence_label(confidence_score),
+                "z_score": z_score,
+                "z_label": z_label,
+                "abs_z": abs_z,
             }
         )
 
