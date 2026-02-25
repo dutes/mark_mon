@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" id="html-root">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -13,6 +13,7 @@
     <nav>
       <a href="/outliers">← Back to Dashboard</a>
       <a href="/health">Health</a>
+      <button class="btn-dark-toggle" id="dark-toggle" onclick="toggleDark()" title="Toggle dark mode">🌙</button>
     </nav>
   </div>
 </header>
@@ -111,4 +112,20 @@
   <span>Last updated: <strong>{{ last_poll_utc[:19].replace("T"," ") if last_poll_utc else "—" }} UTC</strong></span>
 </footer>
 </body>
+<script>
+  const html = document.getElementById('html-root');
+  const btn = document.getElementById('dark-toggle');
+  function applyDark(on) {
+    html.classList.toggle('dark', on);
+    btn.textContent = on ? '☀️' : '🌙';
+  }
+  function toggleDark() {
+    const on = !html.classList.contains('dark');
+    localStorage.setItem('darkMode', on ? '1' : '0');
+    applyDark(on);
+  }
+  const stored = localStorage.getItem('darkMode');
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  applyDark(stored !== null ? stored === '1' : prefersDark);
+</script>
 </html>
