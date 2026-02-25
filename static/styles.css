@@ -305,3 +305,73 @@ footer strong { color: var(--color-text); }
 .bk-table th { text-align: left; padding: 6px 12px; background: #fafafa; border-bottom: 1px solid var(--color-border); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--color-text-muted); }
 .bk-table td { padding: 6px 12px; border-bottom: 1px solid var(--color-border); }
 .bk-table tr:last-child td { border-bottom: none; }
+
+/* ---- Dark mode toggle button ---- */
+.btn-dark-toggle {
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.35);
+  border-radius: 4px;
+  color: rgba(255,255,255,0.75);
+  cursor: pointer;
+  font-size: 13px;
+  padding: 3px 10px;
+  line-height: 1.5;
+}
+.btn-dark-toggle:hover { color: #fff; border-color: #fff; }
+
+/* ---- Dark mode colour overrides ---- */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #0e0e10;
+    --color-surface: #1c1c1e;
+    --color-border: #3a3a3c;
+    --color-text: #f2f2f7;
+    --color-text-muted: #8e8e93;
+    --color-brand: #2c2c2e;
+    --color-red-bg: #2d0a0a;
+    --color-red-border: #7a2020;
+    --color-amber-bg: #2a1e00;
+    --color-amber-border: #7a5000;
+    --color-green-bg: #0a2a0a;
+    --color-green-border: #206020;
+  }
+  thead th, .sel-section__header, .bk-table th { background: #2c2c2e; }
+  tbody tr:hover, .row-red:hover, .row-amber:hover { background: #2c2c2e; }
+  .row-red   { background: var(--color-red-bg); }
+  .row-amber { background: var(--color-amber-bg); }
+  .sel-badge { background: #3a3a3c; color: #c0c0c8; }
+  .sel-home  { background: #0a1a40; color: #7a9eff; }
+  .sel-draw  { background: #1a0a40; color: #b07aff; }
+  .sel-away  { background: #401a0a; color: #ff9a6a; }
+  .odds-card { background: #2c2c2e; }
+  .odds-card--ours { background: #1a1a2e; border-color: #7a7aff; }
+}
+
+html.dark {
+  --color-bg: #0e0e10;
+  --color-surface: #1c1c1e;
+  --color-border: #3a3a3c;
+  --color-text: #f2f2f7;
+  --color-text-muted: #8e8e93;
+  --color-brand: #2c2c2e;
+  --color-red-bg: #2d0a0a;
+  --color-red-border: #7a2020;
+  --color-amber-bg: #2a1e00;
+  --color-amber-border: #7a5000;
+  --color-green-bg: #0a2a0a;
+  --color-green-border: #206020;
+}
+html.dark thead th,
+html.dark .sel-section__header,
+html.dark .bk-table th { background: #2c2c2e; }
+html.dark tbody tr:hover,
+html.dark .row-red:hover,
+html.dark .row-amber:hover { background: #2c2c2e; }
+html.dark .row-red   { background: var(--color-red-bg); }
+html.dark .row-amber { background: var(--color-amber-bg); }
+html.dark .sel-badge { background: #3a3a3c; color: #c0c0c8; }
+html.dark .sel-home  { background: #0a1a40; color: #7a9eff; }
+html.dark .sel-draw  { background: #1a0a40; color: #b07aff; }
+html.dark .sel-away  { background: #401a0a; color: #ff9a6a; }
+html.dark .odds-card { background: #2c2c2e; }
+html.dark .odds-card--ours { background: #1a1a2e; border-color: #7a7aff; }
