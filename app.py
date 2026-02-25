@@ -1,6 +1,8 @@
 """
-app.py — Market Divergence & Exposure Monitor
+app.py — Betfair Market Intelligence
 FastAPI + Jinja2 server-rendered dashboard.
+Betfair's own prices are used as the primary reference; all other bookmakers
+form the competitor market used for consensus / divergence computation.
 """
 
 from __future__ import annotations
@@ -37,22 +39,27 @@ ODDSAPI_KEY = os.getenv("ODDSAPI_KEY", "")
 POLL_INTERVAL = int(os.getenv("POLL_INTERVAL_SECONDS", "60"))
 MAX_HISTORY = int(os.getenv("MAX_HISTORY_SNAPSHOTS", "30"))
 
+# The bookmaker name that represents Betfair in the quotes data
+BETFAIR_BOOKMAKER = "betfair"
+
 # ---------------------------------------------------------------------------
 # In-memory store
 # ---------------------------------------------------------------------------
 store: Dict[str, Any] = {
     "events": [],
-    "quotes_by_event": {},       # event_id -> list of OddsQuote dicts
-    "current_medians": {},       # event_id -> {sel -> median_odds}
-    "previous_medians": None,    # previous cycle medians (for latency mode)
-    "our_odds": {},              # event_id -> {sel -> our_odds}
-    "outliers": [],              # latest computed outlier rows
-    "history": {},               # (event_id, sel) -> deque of {cycle, median_odds, our_odds, ts}
+    "quotes_by_event": {},           # event_id -> list of OddsQuote dicts (all bookmakers)
+    "market_quotes_by_event": {},    # event_id -> list of OddsQuote dicts (competitors only, no Betfair)
+    "current_medians": {},           # event_id -> {sel -> median_odds} (competitor market)
+    "previous_medians": None,        # previous cycle medians (for latency mode)
+    "our_odds": {},                  # event_id -> {sel -> our_odds}  (Betfair prices)
+    "outliers": [],                  # latest computed outlier rows
+    "history": {},                   # (event_id, sel) -> deque of {cycle, median_odds, our_odds, ts}
     "last_poll_utc": None,
     "events_scanned": 0,
     "cycle": 0,
-    "sim_mode": "manual",        # default simulation mode
+    "sim_mode": "manual",        # default simulation mode (fallback when Betfair data absent)
     "provider_name": "",
+    "betfair_available": False,  # True when live Betfair quotes were found
     # Exposure params (defaults)
     "max_stake": 500.0,
     "expected_sharp_bets": 10,
@@ -79,6 +86,29 @@ store["provider_name"] = provider.name
 
 
 # ---------------------------------------------------------------------------
+# Betfair odds extraction
+# ---------------------------------------------------------------------------
+def _extract_betfair_odds(
+    events: List[Dict[str, Any]],
+    quotes_by_event: Dict[str, List[Dict[str, Any]]],
+) -> Dict[str, Dict[str, float]]:
+    """
+    Pull Betfair's quoted prices out of the raw quotes and return them as
+    our_odds_by_event {event_id -> {selection_key -> decimal_odds}}.
+    """
+    result: Dict[str, Dict[str, float]] = {}
+    for event in events:
+        eid = event["id"]
+        betfair_qs = [
+            q for q in quotes_by_event.get(eid, [])
+            if q.get("bookmaker", "").lower() == BETFAIR_BOOKMAKER
+        ]
+        if betfair_qs:
+            result[eid] = {q["selection_key"]: float(q["decimal_odds"]) for q in betfair_qs}
+    return result
+
+
+# ---------------------------------------------------------------------------
 # Poll logic
 # ---------------------------------------------------------------------------
 def run_poll() -> None:
@@ -89,21 +119,39 @@ def run_poll() -> None:
         for event in events:
             quotes_by_event[event["id"]] = provider.get_odds(event["id"])
 
-        current_medians = compute_medians(events, quotes_by_event)
+        # Separate Betfair quotes from the competitor market
+        market_quotes_by_event: Dict[str, List[Dict]] = {
+            eid: [q for q in qs if q.get("bookmaker", "").lower() != BETFAIR_BOOKMAKER]
+            for eid, qs in quotes_by_event.items()
+        }
+
+        # Market consensus is computed from competitor bookmakers only
+        current_medians = compute_medians(events, market_quotes_by_event)
 
         cycle = store["cycle"]
         sim_mode = store["sim_mode"]
-        our_odds = apply_simulation(
+
+        # Use Betfair's own prices as the primary reference ("our odds").
+        # Fall back to simulation for any events/selections without Betfair data.
+        betfair_odds = _extract_betfair_odds(events, quotes_by_event)
+        betfair_available = bool(betfair_odds)
+
+        sim_odds = apply_simulation(
             mode=sim_mode,
             events=events,
             current_medians=current_medians,
             previous_medians=store["previous_medians"],
             cycle=cycle,
         )
+        our_odds: Dict[str, Dict[str, float]] = {}
+        for event in events:
+            eid = event["id"]
+            # Betfair prices take priority; simulation fills any gaps
+            our_odds[eid] = {**sim_odds.get(eid, {}), **betfair_odds.get(eid, {})}
 
         outliers = compute_outliers(
             events=events,
-            quotes_by_event=quotes_by_event,
+            quotes_by_event=market_quotes_by_event,  # compare against competitor market only
             our_odds_by_event=our_odds,
             max_stake=store["max_stake"],
             expected_sharp_bets=store["expected_sharp_bets"],
@@ -140,8 +188,10 @@ def run_poll() -> None:
         store["current_medians"] = current_medians
         store["events"] = events
         store["quotes_by_event"] = quotes_by_event
+        store["market_quotes_by_event"] = market_quotes_by_event  # competitor-only quotes
         store["our_odds"] = our_odds
         store["outliers"] = outliers
+        store["betfair_available"] = betfair_available
         store["last_poll_utc"] = datetime.now(timezone.utc).isoformat()
         store["events_scanned"] = len(events)
         store["cycle"] += 1
@@ -172,7 +222,7 @@ async def lifespan(app: FastAPI):
 # ---------------------------------------------------------------------------
 # App
 # ---------------------------------------------------------------------------
-app = FastAPI(title="Market Divergence & Exposure Monitor", lifespan=lifespan)
+app = FastAPI(title="Betfair Market Intelligence", lifespan=lifespan)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 app.mount("/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), name="static")
@@ -200,6 +250,7 @@ async def health():
         "last_poll_utc": store["last_poll_utc"],
         "events_scanned": store["events_scanned"],
         "provider": store["provider_name"],
+        "betfair_available": store["betfair_available"],
         "sim_mode": store["sim_mode"],
         "cycle": store["cycle"],
     }
@@ -269,6 +320,7 @@ async def outliers_page(
             "last_poll_utc": store["last_poll_utc"],
             "provider_name": store["provider_name"],
             "events_scanned": store["events_scanned"],
+            "betfair_available": store["betfair_available"],
         },
     )
 
@@ -282,11 +334,13 @@ async def event_detail(
     if not event:
         return HTMLResponse(content="<h1>Event not found</h1>", status_code=404)
 
-    quotes = store["quotes_by_event"].get(event_id, [])
+    # Use competitor-only quotes for market stats; Betfair is shown separately
+    market_quotes = store["market_quotes_by_event"].get(event_id, [])
     our_odds_map = store["our_odds"].get(event_id, {})
 
     # Collect history for this event — use all known selection keys
-    sel_keys = list({q["selection_key"] for q in quotes}) or list(our_odds_map.keys())
+    all_quotes = store["quotes_by_event"].get(event_id, [])
+    sel_keys = list({q["selection_key"] for q in all_quotes}) or list(our_odds_map.keys())
     history_by_sel: Dict[str, List] = {}
     for sel in sel_keys:
         key = (event_id, sel)
@@ -294,7 +348,7 @@ async def event_detail(
 
     detail = compute_event_detail(
         event=event,
-        quotes=quotes,
+        quotes=market_quotes,
         our_odds_map=our_odds_map,
         history=history_by_sel,
         max_stake=store["max_stake"],
@@ -309,6 +363,7 @@ async def event_detail(
             **detail,
             "last_poll_utc": store["last_poll_utc"],
             "provider_name": store["provider_name"],
+            "betfair_available": store["betfair_available"],
         },
     )
 

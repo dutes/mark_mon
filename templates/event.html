@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>{{ event_name }} — Market Monitor</title>
+  <title>{{ event_name }} — Betfair Market Intelligence</title>
   <link rel="stylesheet" href="/static/styles.css"/>
 </head>
 <body>
 <header>
   <div class="header-inner">
-    <span class="brand">Market Divergence &amp; Exposure Monitor</span>
+    <span class="brand">Betfair Market Intelligence</span>
     <nav>
       <a href="/outliers">← Back to Dashboard</a>
       <a href="/health">Health</a>
@@ -34,38 +34,38 @@
     <div class="sel-section__header">
       <span class="sel-badge sel-{{ sel_detail.selection_key }}" data-tooltip="Betting selection: Home win, Draw, or Away win.">{{ sel_detail.selection_key }}</span>
       <span class="badge badge--{{ sel_detail.severity }}" data-tooltip="Alert severity: Green = minor divergence, Amber = notable, Red = significant divergence requiring review.">{{ sel_detail.severity }}</span>
-      <span class="sel-section__edge" data-tooltip="Percentage edge our odds give compared to the market median. Positive means we are longer than the market.">Edge: <strong class="{{ severity_class(sel_detail.severity) }}">
+      <span class="sel-section__edge" data-tooltip="Percentage by which Betfair's odds exceed the competitor market median. Positive = Betfair is offering more value than the competitor market.">Edge: <strong class="{{ severity_class(sel_detail.severity) }}">
         {% if sel_detail.edge_pct >= 0 %}+{% endif %}{{ "%.2f"|format(sel_detail.edge_pct) }}%
       </strong></span>
-      <span class="sel-section__exposure" data-tooltip="Estimated maximum financial exposure based on max stake, expected sharp bets, and hit rate parameters.">Exposure: <strong>€ {{ "%.2f"|format(sel_detail.exposure) }}</strong></span>
+      <span class="sel-section__exposure" data-tooltip="Estimated maximum liability based on max stake, expected sharp bets, and hit rate parameters.">Exposure: <strong>€ {{ "%.2f"|format(sel_detail.exposure) }}</strong></span>
     </div>
 
     <div class="sel-section__odds-row">
       <div class="odds-card">
-        <div class="odds-card__label" data-tooltip="Median decimal odds across all bookmakers for this selection.">Market Median</div>
+        <div class="odds-card__label" data-tooltip="Median decimal odds across the competitor market (all bookmakers except Betfair) for this selection.">Competitor Median</div>
         <div class="odds-card__value mono">{{ "%.3f"|format(sel_detail.market_median_odds) }}</div>
       </div>
-      <div class="odds-card odds-card--ours">
-        <div class="odds-card__label" data-tooltip="Our quoted decimal odds for this selection.">Our Odds</div>
+      <div class="odds-card odds-card--betfair">
+        <div class="odds-card__label" data-tooltip="Betfair's current decimal odds for this selection.">Betfair</div>
         <div class="odds-card__value mono">{{ "%.3f"|format(sel_detail.our_odds) }}</div>
       </div>
     </div>
 
     <!-- Spread & Confidence -->
     <p class="spread-info">
-      <span data-tooltip="Width of the bookmaker spread (max − min odds). A wider spread indicates less consensus among bookmakers.">Spread: <span class="mono">{{ "%.3f"|format(sel_detail.spread_width) }}</span>
+      <span data-tooltip="Width of the competitor bookmaker spread (max − min odds). A wider spread indicates less consensus among competitors.">Spread: <span class="mono">{{ "%.3f"|format(sel_detail.spread_width) }}</span>
       <span class="meta-text">({{ sel_detail.spread_category }})</span></span>
-      &nbsp;|&nbsp; <span data-tooltip="How reliable the market signal is, based on how many bookmakers have priced this selection.">Confidence: {{ sel_detail.confidence_label }}
+      &nbsp;|&nbsp; <span data-tooltip="How reliable the competitor market signal is, based on how many bookmakers have priced this selection.">Confidence: {{ sel_detail.confidence_label }}
       <span class="meta-text">({{ sel_detail.confidence_score }} books)</span></span>
-      &nbsp;|&nbsp; <span data-tooltip="Where our odds rank among all bookmakers (1 = shortest). Lower rank means we offer longer odds than most books.">Rank: {{ sel_detail.our_rank }} / {{ sel_detail.total_books + 1 }}</span>
-      &nbsp;|&nbsp; <span data-tooltip="Arithmetic mean of all bookmaker decimal odds for this selection.">Mean: <span class="mono">{{ "%.3f"|format(sel_detail.market_mean_odds) if sel_detail.market_mean_odds is not none else "N/A" }}</span></span>
-      &nbsp;|&nbsp; <span data-tooltip="Standard deviation of bookmaker odds for this selection. Low Std means bookmakers are tightly clustered.">Std: <span class="mono">{{ "%.3f"|format(sel_detail.market_std_odds) if sel_detail.market_std_odds is not none else "N/A" }}</span></span>
-      &nbsp;|&nbsp; <span data-tooltip="Z-score: how many standard deviations our odds sit from the bookmaker mean. High absolute value signals a strong outlier.">Z: <span class="mono">{{ sel_detail.z_label }}</span></span>
+      &nbsp;|&nbsp; <span data-tooltip="Where Betfair's odds rank among all competitor bookmakers (1 = longest / best value).">Rank: {{ sel_detail.our_rank }} / {{ sel_detail.total_books + 1 }}</span>
+      &nbsp;|&nbsp; <span data-tooltip="Arithmetic mean of all competitor bookmaker decimal odds for this selection.">Mean: <span class="mono">{{ "%.3f"|format(sel_detail.market_mean_odds) if sel_detail.market_mean_odds is not none else "N/A" }}</span></span>
+      &nbsp;|&nbsp; <span data-tooltip="Standard deviation of competitor bookmaker odds for this selection.">Std: <span class="mono">{{ "%.3f"|format(sel_detail.market_std_odds) if sel_detail.market_std_odds is not none else "N/A" }}</span></span>
+      &nbsp;|&nbsp; <span data-tooltip="Z-score: how many standard deviations Betfair's odds sit from the competitor bookmaker mean.">Z: <span class="mono">{{ sel_detail.z_label }}</span></span>
     </p>
 
-    <!-- Bookmaker breakdown -->
+    <!-- Competitor bookmaker breakdown -->
     <details class="bk-details">
-      <summary>Bookmaker odds ({{ sel_detail.bookmakers|length }})</summary>
+      <summary>Competitor bookmaker odds ({{ sel_detail.bookmakers|length }})</summary>
       <table class="bk-table">
         <thead>
           <tr><th>Bookmaker</th><th>Decimal odds</th><th>Implied prob</th><th>Timestamp</th></tr>
@@ -90,7 +90,7 @@
       <summary>Price history ({{ sel_history|length }} snapshots)</summary>
       <table class="bk-table">
         <thead>
-          <tr><th>Cycle</th><th>Timestamp</th><th>Median odds</th><th>Our odds</th><th>Edge %</th><th>Severity</th></tr>
+          <tr><th>Cycle</th><th>Timestamp</th><th>Competitor Median</th><th>Betfair</th><th>Edge %</th><th>Severity</th></tr>
         </thead>
         <tbody>
           {% for snap in sel_history|reverse %}

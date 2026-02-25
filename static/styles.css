@@ -1,5 +1,5 @@
 /* =====================================================
-   Market Divergence & Exposure Monitor — styles.css
+   Betfair Market Intelligence — styles.css
    Clean, understated, internal-tool aesthetic
    ===================================================== */
 
@@ -9,7 +9,8 @@
   --color-border: #e0e0e4;
   --color-text: #1c1c1e;
   --color-text-muted: #6c6c70;
-  --color-brand: #1c1c1e;
+  --color-brand: #003c1e;
+  --color-brand-accent: #FFD700;
 
   --color-red: #d70015;
   --color-red-bg: #fff5f5;
@@ -290,6 +291,8 @@ footer strong { color: var(--color-text); }
   text-align: center;
 }
 .odds-card--ours { border-color: var(--color-brand); background: #f0f0f5; }
+.odds-card--betfair { border-color: var(--color-brand); background: #e8f2ec; }
+.odds-card--betfair .odds-card__label { color: var(--color-brand); font-weight: 700; }
 .odds-card__label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--color-text-muted); margin-bottom: 6px; }
 .odds-card__value { font-size: 22px; font-weight: 700; }
 
@@ -349,7 +352,17 @@ html.dark .sel-draw  { background: #1a0a40; color: #b07aff; }
 html.dark .sel-away  { background: #401a0a; color: #ff9a6a; }
 html.dark .odds-card { background: #2c2c2e; }
 html.dark .odds-card--ours { background: #1a1a2e; border-color: #7a7aff; }
+html.dark .odds-card--betfair { background: #0a1f0f; border-color: #00a040; }
+html.dark .odds-card--betfair .odds-card__label { color: #00c050; }
 html.dark .link-detail { color: #6ea8fe; }
+html.dark .betfair-live-badge { color: #00c050; }
+
+/* ---- Betfair live badge ---- */
+.betfair-live-badge {
+  color: var(--color-brand);
+  font-weight: 700;
+  font-size: 12px;
+}
 
 /* ---- Tooltips ---- */
 [data-tooltip] {
