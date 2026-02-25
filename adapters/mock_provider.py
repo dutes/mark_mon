@@ -13,20 +13,25 @@ from typing import List, Dict, Any
 
 
 def _make_events() -> List[Dict[str, Any]]:
-    """Build event list with start times spread across the next 6–23 hours."""
+    """Build event list with start times spread across the next 3–22 hours."""
     now = datetime.now(timezone.utc)
-    offsets_h = [2, 4, 6, 8, 10, 14, 18, 22]  # hours from now
 
     templates = [
-        ("mock_001", "soccer", "English Premier League", "Arsenal",       "Chelsea"),
-        ("mock_002", "soccer", "English Premier League", "Manchester City","Liverpool"),
-        ("mock_003", "soccer", "La Liga",                "Real Madrid",    "Barcelona"),
-        ("mock_004", "soccer", "La Liga",                "Atletico Madrid","Sevilla"),
-        ("mock_005", "soccer", "Bundesliga",             "Bayern Munich",  "Borussia Dortmund"),
-        ("mock_006", "soccer", "Bundesliga",             "RB Leipzig",     "Bayer Leverkusen"),
-        ("mock_007", "soccer", "Serie A",                "AC Milan",       "Juventus"),
-        ("mock_008", "soccer", "Serie A",                "Inter Milan",    "Napoli"),
+        ("mock_001", "soccer", "English Premier League", "Arsenal",          "Chelsea"),
+        ("mock_002", "soccer", "English Premier League", "Manchester City",   "Liverpool"),
+        ("mock_003", "soccer", "La Liga",                "Real Madrid",       "Barcelona"),
+        ("mock_004", "soccer", "La Liga",                "Atletico Madrid",   "Sevilla"),
+        ("mock_005", "soccer", "Bundesliga",             "Bayern Munich",     "Borussia Dortmund"),
+        ("mock_006", "soccer", "Bundesliga",             "RB Leipzig",        "Bayer Leverkusen"),
+        ("mock_007", "soccer", "Serie A",                "AC Milan",          "Juventus"),
+        ("mock_008", "soccer", "Serie A",                "Inter Milan",       "Napoli"),
+        ("mock_009", "rugby",  "Rugby Union Premiership","Sale Sharks",       "Harlequins"),
+        ("mock_010", "rugby",  "Rugby Union Premiership","Bath Rugby",        "Exeter Chiefs"),
+        ("mock_011", "rugby",  "NRL Rugby League",       "Sydney Roosters",   "Melbourne Storm"),
+        ("mock_012", "rugby",  "NRL Rugby League",       "Brisbane Broncos",  "Penrith Panthers"),
     ]
+
+    offsets_h = [2, 4, 6, 8, 10, 14, 18, 22, 3, 7, 11, 16]
 
     events = []
     for (eid, sport, league, home, away), offset_h in zip(templates, offsets_h):
@@ -111,6 +116,40 @@ _SAMPLE_ODDS: Dict[str, List[tuple]] = {
         ("williamhill", 1.93, 3.55, 4.00),
         ("bwin",      1.95, 3.50, 3.95),
     ],
+    # Rugby Union Premiership
+    "mock_009": [
+        ("bet365",    1.80, 0.0, 2.10),
+        ("betfair",   1.82, 0.0, 2.08),
+        ("pinnacle",  1.81, 0.0, 2.11),
+        ("unibet",    1.79, 0.0, 2.12),
+        ("williamhill", 1.78, 0.0, 2.15),
+        ("bwin",      1.80, 0.0, 2.10),
+    ],
+    "mock_010": [
+        ("bet365",    2.30, 0.0, 1.65),
+        ("betfair",   2.32, 0.0, 1.63),
+        ("pinnacle",  2.29, 0.0, 1.66),
+        ("unibet",    2.28, 0.0, 1.67),
+        ("williamhill", 2.35, 0.0, 1.62),
+        ("bwin",      2.30, 0.0, 1.65),
+    ],
+    # NRL Rugby League
+    "mock_011": [
+        ("bet365",    1.65, 0.0, 2.30),
+        ("betfair",   1.67, 0.0, 2.28),
+        ("pinnacle",  1.66, 0.0, 2.32),
+        ("unibet",    1.64, 0.0, 2.35),
+        ("williamhill", 1.63, 0.0, 2.38),
+        ("bwin",      1.65, 0.0, 2.30),
+    ],
+    "mock_012": [
+        ("bet365",    1.90, 0.0, 1.95),
+        ("betfair",   1.92, 0.0, 1.93),
+        ("pinnacle",  1.91, 0.0, 1.96),
+        ("unibet",    1.89, 0.0, 1.97),
+        ("williamhill", 1.88, 0.0, 2.00),
+        ("bwin",      1.90, 0.0, 1.95),
+    ],
 }
 
 
@@ -129,6 +168,8 @@ class MockOddsProvider:
         quotes = []
         for bookmaker, home_odds, draw_odds, away_odds in raw:
             for selection_key, odds in [("home", home_odds), ("draw", draw_odds), ("away", away_odds)]:
+                if odds <= 1.0:
+                    continue
                 quotes.append(
                     {
                         "event_id": event_id,
