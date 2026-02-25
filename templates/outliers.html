@@ -21,9 +21,9 @@
 <main>
   <!-- Controls Panel -->
   <form method="get" action="/outliers" class="controls-panel">
-    <div class="controls-row">
+      <div class="controls-row">
       <div class="control-group">
-        <label>Sport</label>
+        <label><span data-tooltip="Filter results to a specific sport.">Sport</span></label>
         <select name="sport" id="sport-select" onchange="this.form.submit()">
           <option value="">All sports</option>
           {% for sp in sports %}
@@ -32,7 +32,7 @@
         </select>
       </div>
       <div class="control-group">
-        <label>Severity</label>
+        <label><span data-tooltip="Minimum alert level to display. Amber+ shows amber and red rows; Red only shows red rows.">Severity</span></label>
         <select name="severity">
           <option value="amber" {% if severity_filter == "amber" %}selected{% endif %}>Amber + Red</option>
           <option value="red"   {% if severity_filter == "red"   %}selected{% endif %}>Red only</option>
@@ -40,7 +40,7 @@
         </select>
       </div>
       <div class="control-group">
-        <label>League / Meeting</label>
+        <label><span data-tooltip="Filter results to a specific league or meeting within the selected sport.">League / Meeting</span></label>
         <select name="league">
           <option value="">All leagues</option>
           {% for lg in leagues %}
@@ -49,7 +49,7 @@
         </select>
       </div>
       <div class="control-group">
-        <label>Time window</label>
+        <label><span data-tooltip="Only show events starting within the next N hours from now.">Time window</span></label>
         <select name="hours">
           <option value="1"   {% if hours_filter == 1   %}selected{% endif %}>1 hour</option>
           <option value="6"   {% if hours_filter == 6   %}selected{% endif %}>6 hours</option>
@@ -65,7 +65,7 @@
 
     <div class="controls-row controls-row--sep">
       <div class="control-group">
-        <label>Simulation mode</label>
+        <label><span data-tooltip="Controls how our odds are generated for simulation. Manual keeps static odds; other modes introduce dynamic divergence patterns.">Simulation mode</span></label>
         <select name="sim_mode">
           {% for key, label in sim_modes.items() %}
           <option value="{{ key }}" {% if sim_mode == key %}selected{% endif %}>{{ label }}</option>
@@ -73,15 +73,15 @@
         </select>
       </div>
       <div class="control-group">
-        <label>Max stake (€)</label>
+        <label><span data-tooltip="Maximum stake amount in euros used to calculate exposure per selection.">Max stake (€)</span></label>
         <input type="number" name="max_stake" value="{{ max_stake|int }}" min="1" max="10000" style="width:80px"/>
       </div>
       <div class="control-group">
-        <label>Sharp bets expected</label>
+        <label><span data-tooltip="Estimated number of sharp bettors expected to act on each outlier, used in exposure calculations.">Sharp bets expected</span></label>
         <input type="number" name="expected_sharp_bets" value="{{ expected_sharp_bets }}" min="1" max="1000" style="width:70px"/>
       </div>
       <div class="control-group">
-        <label>Hit rate</label>
+        <label><span data-tooltip="Assumed proportion of sharp bets that result in a winning payout (0.01–1.0). Used to weight exposure risk.">Hit rate</span></label>
         <input type="number" name="assumed_hit_rate" value="{{ assumed_hit_rate }}" min="0.01" max="1.0" step="0.01" style="width:70px"/>
       </div>
       <div class="control-group control-group--action">
@@ -104,17 +104,17 @@
     <table>
       <thead>
         <tr>
-          <th>Start (UTC)</th>
-          <th>Event</th>
-          <th>Sel</th>
-          <th>Median odds</th>
-          <th>Our odds</th>
-          <th>Edge %</th>
-          <th title="Standard deviations from market mean (bookmakers only).">Z</th>
-          <th>Severity</th>
-          <th>Exposure €</th>
-          <th>Spread</th>
-          <th>Rank</th>
+          <th><span data-tooltip="Scheduled start time of the event in UTC.">Start (UTC)</span></th>
+          <th><span data-tooltip="League and event name. Click 'detail' to drill into bookmaker odds.">Event</span></th>
+          <th><span data-tooltip="Betting selection: Home win, Draw, or Away win.">Sel</span></th>
+          <th><span data-tooltip="Median decimal odds across all bookmakers for this selection.">Median odds</span></th>
+          <th><span data-tooltip="Our quoted decimal odds for this selection.">Our odds</span></th>
+          <th><span data-tooltip="Percentage edge our odds give compared to the market median. Positive means we are longer than the market.">Edge %</span></th>
+          <th><span data-tooltip="Standard deviations our odds sit from the bookmaker mean. Higher absolute values indicate a stronger divergence.">Z</span></th>
+          <th><span data-tooltip="Alert severity: Green = minor divergence, Amber = notable divergence, Red = significant divergence requiring review.">Severity</span></th>
+          <th><span data-tooltip="Estimated maximum financial exposure based on max stake, expected sharp bets, and hit rate parameters.">Exposure €</span></th>
+          <th><span data-tooltip="Width of the bookmaker spread (max − min odds) and its category (tight / normal / wide).">Spread</span></th>
+          <th><span data-tooltip="Where our odds rank among all bookmakers (1 = shortest odds). Lower rank means we are offering longer odds than most.">Rank</span></th>
           <th></th>
         </tr>
       </thead>
