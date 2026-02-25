@@ -207,6 +207,8 @@ tbody tr:hover { background: #fafafa; }
 /* ---- Misc ---- */
 .mono { font-family: var(--font-mono); }
 .small { font-size: 11px; }
+.meta-text { color: var(--color-text-muted); font-size: 12px; }
+.spread-info { font-size: 13px; margin: 6px 0 10px; color: var(--color-text); }
 .link-detail { font-size: 12px; color: var(--color-brand); text-decoration: none; white-space: nowrap; }
 .link-detail:hover { text-decoration: underline; }
 
@@ -319,34 +321,6 @@ footer strong { color: var(--color-text); }
 }
 .btn-dark-toggle:hover { color: #fff; border-color: #fff; }
 
-/* ---- Dark mode colour overrides ---- */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-bg: #0e0e10;
-    --color-surface: #1c1c1e;
-    --color-border: #3a3a3c;
-    --color-text: #f2f2f7;
-    --color-text-muted: #8e8e93;
-    --color-brand: #2c2c2e;
-    --color-red-bg: #2d0a0a;
-    --color-red-border: #7a2020;
-    --color-amber-bg: #2a1e00;
-    --color-amber-border: #7a5000;
-    --color-green-bg: #0a2a0a;
-    --color-green-border: #206020;
-  }
-  thead th, .sel-section__header, .bk-table th { background: #2c2c2e; }
-  tbody tr:hover, .row-red:hover, .row-amber:hover { background: #2c2c2e; }
-  .row-red   { background: var(--color-red-bg); }
-  .row-amber { background: var(--color-amber-bg); }
-  .sel-badge { background: #3a3a3c; color: #c0c0c8; }
-  .sel-home  { background: #0a1a40; color: #7a9eff; }
-  .sel-draw  { background: #1a0a40; color: #b07aff; }
-  .sel-away  { background: #401a0a; color: #ff9a6a; }
-  .odds-card { background: #2c2c2e; }
-  .odds-card--ours { background: #1a1a2e; border-color: #7a7aff; }
-}
-
 html.dark {
   --color-bg: #0e0e10;
   --color-surface: #1c1c1e;
@@ -375,3 +349,4 @@ html.dark .sel-draw  { background: #1a0a40; color: #b07aff; }
 html.dark .sel-away  { background: #401a0a; color: #ff9a6a; }
 html.dark .odds-card { background: #2c2c2e; }
 html.dark .odds-card--ours { background: #1a1a2e; border-color: #7a7aff; }
+html.dark .link-detail { color: #6ea8fe; }

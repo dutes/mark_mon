@@ -112,6 +112,8 @@
           <th>Edge %</th>
           <th>Severity</th>
           <th>Exposure €</th>
+          <th>Spread</th>
+          <th>Rank</th>
           <th></th>
         </tr>
       </thead>
@@ -131,6 +133,8 @@
           </td>
           <td><span class="badge badge--{{ row.severity }}">{{ row.severity }}</span></td>
           <td class="mono">€ {{ "%.2f"|format(row.exposure) }}</td>
+          <td class="mono">{{ "%.3f"|format(row.spread_width) }} <span class="meta-text">({{ row.spread_category }})</span></td>
+          <td class="mono">{{ row.our_rank }} / {{ row.total_books + 1 }}</td>
           <td><a href="/event/{{ row.event_id }}" class="link-detail">detail →</a></td>
         </tr>
         {% endfor %}
