@@ -23,12 +23,16 @@ except ImportError:
 class OddsApiProvider:
     """
     Adapter for https://the-odds-api.com/
-    Fetches prematch soccer 1x2 (h2h) odds.
+    Fetches prematch soccer (h2h) and rugby odds.
     """
 
     name = "OddsApiProvider"
     BASE_URL = "https://api.the-odds-api.com/v4"
-    SPORT = "soccer"
+    SPORTS = [
+        ("soccer_epl",        "soccer"),
+        ("rugbyunion",        "rugby"),
+        ("rugbyleague_nrl",   "rugby"),
+    ]
     REGIONS = "eu"
     MARKETS = "h2h"
 
@@ -46,25 +50,30 @@ class OddsApiProvider:
         return bool(self._api_key) and _HTTPX_AVAILABLE
 
     def _fetch_sport_odds(self) -> List[Dict[str, Any]]:
-        """Fetch all soccer events + h2h odds in one call."""
+        """Fetch events + h2h odds for all configured sports."""
         if not self.available:
             return []
-        url = f"{self.BASE_URL}/sports/soccer_epl/odds/"
-        params = {
-            "apiKey": self._api_key,
-            "regions": self.REGIONS,
-            "markets": self.MARKETS,
-            "oddsFormat": "decimal",
-            "dateFormat": "iso",
-        }
-        try:
-            with httpx.Client(timeout=15.0) as client:
-                resp = client.get(url, params=params)
-                resp.raise_for_status()
-                return resp.json()
-        except Exception as exc:
-            logger.error("OddsApiProvider fetch error: %s", exc)
-            return []
+        results: List[Dict[str, Any]] = []
+        for sport_key, sport_type in self.SPORTS:
+            url = f"{self.BASE_URL}/sports/{sport_key}/odds/"
+            params = {
+                "apiKey": self._api_key,
+                "regions": self.REGIONS,
+                "markets": self.MARKETS,
+                "oddsFormat": "decimal",
+                "dateFormat": "iso",
+            }
+            try:
+                with httpx.Client(timeout=15.0) as client:
+                    resp = client.get(url, params=params)
+                    resp.raise_for_status()
+                    items = resp.json()
+                    for item in items:
+                        item["_sport_type"] = sport_type
+                    results.extend(items)
+            except Exception as exc:
+                logger.error("OddsApiProvider fetch error for %s: %s", sport_key, exc)
+        return results
 
     def _parse_raw(self, raw_events: List[Dict[str, Any]]) -> None:
         """Parse API response into internal format."""
@@ -74,9 +83,10 @@ class OddsApiProvider:
 
         for item in raw_events:
             event_id = item.get("id", "")
+            sport_type = item.get("_sport_type", "soccer")
             event = {
                 "id": event_id,
-                "sport": "soccer",
+                "sport": sport_type,
                 "league": item.get("sport_title", "Unknown"),
                 "start_time_utc": item.get("commence_time", now),
                 "home_team": item.get("home_team", "Home"),
