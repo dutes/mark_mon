@@ -65,8 +65,22 @@
 
     <div class="controls-row controls-row--sep">
       <div class="control-group">
-        <label><span data-tooltip="Controls how Betfair prices are simulated when live Betfair quotes are unavailable. Not used when Betfair data is present.">Simulation mode {% if betfair_available %}<span class="meta-text">(inactive — live Betfair data)</span>{% endif %}</span></label>
-        <select name="sim_mode" {% if betfair_available %}disabled title="Betfair live prices are active"{% endif %}>
+        <label><span data-tooltip="Switch between live Betfair odds and simulated data.">Data Source</span></label>
+        <div class="toggle-group">
+          <span class="toggle-label {% if not use_simulated %}toggle-label--active{% endif %}">Live Betfair</span>
+          <label class="toggle-switch" title="Toggle data source">
+            <input type="checkbox" id="use-simulated-cb"
+              {% if use_simulated %}checked{% endif %}
+              onchange="document.getElementById('use-simulated-input').value = this.checked ? '1' : '0'; this.form.submit()">
+            <span class="toggle-slider"></span>
+          </label>
+          <span class="toggle-label {% if use_simulated %}toggle-label--active{% endif %}">Simulated</span>
+        </div>
+        <input type="hidden" id="use-simulated-input" name="use_simulated" value="{{ '1' if use_simulated else '0' }}"/>
+      </div>
+      <div class="control-group">
+        <label><span data-tooltip="Controls how Betfair prices are simulated when live Betfair quotes are unavailable. Not used when Betfair data is present.">Simulation mode {% if not use_simulated %}<span class="meta-text">(inactive — live Betfair data)</span>{% endif %}</span></label>
+        <select name="sim_mode" {% if not use_simulated %}disabled title="Switch to simulated mode to use this"{% endif %}>
           {% for key, label in sim_modes.items() %}
           <option value="{{ key }}" {% if sim_mode == key %}selected{% endif %}>{{ label }}</option>
           {% endfor %}
@@ -92,7 +106,7 @@
 
   <!-- Export link -->
   <div class="toolbar">
-    <span class="result-count">{{ rows|length }} result(s){% if betfair_available %} &nbsp;·&nbsp; <span class="betfair-live-badge">● Betfair live</span>{% endif %}</span>
+    <span class="result-count">{{ rows|length }} result(s){% if betfair_available and not use_simulated %} &nbsp;·&nbsp; <span class="betfair-live-badge">● Betfair live</span>{% elif use_simulated %} &nbsp;·&nbsp; <span class="sim-badge">⚙ Simulated</span>{% endif %}</span>
     <a class="btn-export" href="/export.csv?severity={{ severity_filter }}&sport={{ sport_filter }}&league={{ league_filter }}&hours={{ hours_filter }}">
       ↓ Export CSV
     </a>
