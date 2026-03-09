@@ -16,8 +16,8 @@ Open [http://localhost:8000](http://localhost:8000).
 ### Run with Docker directly
 
 ```bash
-docker build -t mark_mon .
-docker run -p 8000:8000 mark_mon
+docker build -t market_monitor .
+docker run -p 8000:8000 market_monitor
 ```
 
 ### Run with Docker Compose
